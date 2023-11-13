@@ -1,5 +1,6 @@
 from rclpy.node import Node
 import rclpy
+<<<<<<< HEAD
 from std_msgs.msg import Header
 from rclpy.duration import Duration
 from tf2_ros import TransformListener, Buffer, TransformBroadcaster
@@ -52,6 +53,18 @@ class CameraLocalizer(Node):
 
 
 def camera_localizer_entry(args=None):
+=======
+
+
+class CameraLocalizer(Node):
+    def __init__(self):
+        super().__init__('camera_localizer')
+
+        pass
+
+
+def main(args=None):
+>>>>>>> 5d7f16f (Added launch file that starts the realsense node for both)
     rclpy.init(args=args)
     camera_localizer = CameraLocalizer()
     rclpy.spin(camera_localizer)

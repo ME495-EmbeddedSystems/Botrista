@@ -1,7 +1,13 @@
 from launch import LaunchDescription
+<<<<<<< HEAD
 from launch_ros.actions import Node, SetRemap
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import IncludeLaunchDescription, GroupAction
+=======
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from launch.actions import IncludeLaunchDescription
+>>>>>>> 5d7f16f (Added launch file that starts the realsense node for both)
 from launch.substitutions import PathJoinSubstitution
 
 
@@ -10,6 +16,7 @@ from launch.substitutions import PathJoinSubstitution
 
 def generate_launch_description():
     return LaunchDescription([
+<<<<<<< HEAD
         GroupAction(actions=[
             SetRemap(src='/d435i/color/image_raw',
                      dst='/image_raw'),
@@ -66,4 +73,30 @@ def generate_launch_description():
             package="botrista",
             executable="camera_localizer",
         )
+=======
+        IncludeLaunchDescription(
+            PathJoinSubstitution([
+                FindPackageShare("realsense2_camera"),
+                "launch",
+                "rs_launch.py"
+            ]),
+            launch_arguments={
+                'camera_name': 'd435i',
+                'device_type': 'd435i',
+                'pointcloud.enable': 'true',
+            }.items(),
+        ),
+        IncludeLaunchDescription(
+            PathJoinSubstitution([
+                FindPackageShare("realsense2_camera"),
+                "launch",
+                "rs_launch.py"
+            ]),
+            launch_arguments={
+                'camera_name': 'd405',
+                'device_type': 'd405',
+                'pointcloud.enable': 'true',
+            }.items(),
+        ),
+>>>>>>> 5d7f16f (Added launch file that starts the realsense node for both)
     ])
