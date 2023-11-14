@@ -15,6 +15,7 @@ from std_srvs.srv import Empty
 class Pouring(Node):
     def __init__(self):
         super().__init__(node_name="pouring")
+        self.path = None
         self.get_logger().warn("Pouring started")
 
         # Moveit Wrapper Object
@@ -22,29 +23,48 @@ class Pouring(Node):
                                 "panda_link0",
                                 "panda_hand_tcp",
                                 "panda_manipulator",
-                                "panda_gripper/joint_states")
+                                "joint_states")
 
         # Creating Services
-        self.pour_client = self.create_client(Empty,
+        self.pour_client = self.create_service(Empty,
                                               "pour_kettle",
-                                              10,
                                               self.pour_callback)
+        self.execute = self.create_service(Empty,
+                                           "execute_traj",
+                                           self.execute_callback)
 
         # TODO: get april tag home position and use that
+        self.home = Point(x=0.217, y=0.096, z=0.622)
+        self.homePose = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
 
-    def pour_callback(self, request, response):
+    async def pour_callback(self, request, response):
         # TODO: Fill in
+        waypoints = get_spiral_waypoints(self.home,
+                                         self.homePose,
+                                         10,
+                                         0.0,
+                                         0.01,
+                                         1.0,
+                                         flipStart=True)
+        result = await self.moveit.create_cartesian_path(waypoints)
+        self.path = result.trajectory
+        return response
+
+    async def execute_callback(self, request, response):
+        # Temporary
+        self.moveit.execute_trajectory(self.path)
         return response
 
 
 def main(args=None):
     rclpy.init(args=args)
-    Pouring = Pouring()
-    rclpy.spin(Pouring)
+    node = Pouring()
+    rclpy.spin(node)
     rclpy.shutdown()
 
 
 def get_spiral_waypoints(start: Point,
+                         ore: Quaternion,
                          numPoints: int,
                          a: float,
                          b: float,
@@ -84,9 +104,9 @@ def get_spiral_waypoints(start: Point,
         y = coord[0]*math.sin(coord[1]) + start.y
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
-                                            z=start.z)))
-
+                                            z=start.z),
+                             orientation=ore))
     if flipStart:
-        return poseList.reverse
+        poseList.reverse()
 
     return poseList
