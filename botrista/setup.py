@@ -26,6 +26,7 @@ setup(
             'camera_localizer = botrista.camera_localizer:camera_localizer_entry',
             'pouring = botrista.pouring:main'
             'camera_localizer = botrista.camera_localizer:camera_localizer_entry'
+            'pouring = botrista.pouring:main'
         ],
     },
 )
