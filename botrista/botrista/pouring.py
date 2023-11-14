@@ -84,8 +84,8 @@ class Pouring(Node):
                                            self.execute_callback)
 
         # TODO: get april tag home position and use that
-        self.home = Point(x=0.217, y=0.096, z=0.622)
-        self.homePose = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+        self.home = Point(x=0.3069, y=0.0, z=0.487)
+        self.homePose = Quaternion(x=1.0, y=0.0, z=0.0, w=0.0)
 
     async def pour_callback(self, request, response):
         # TODO: Fill in
@@ -94,11 +94,11 @@ class Pouring(Node):
 =======
         waypoints = get_spiral_waypoints(self.home,
                                          self.homePose,
-                                         10,
+                                         100,
                                          0.0,
                                          0.01,
-                                         1.0,
-                                         flipStart=True)
+                                         4.0,
+                                         flipStart=False)
         result = await self.moveit.create_cartesian_path(waypoints)
         self.path = result.trajectory
         return response
