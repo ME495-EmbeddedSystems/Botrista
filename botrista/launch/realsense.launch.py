@@ -58,9 +58,9 @@ def generate_launch_description():
                     "tag.yaml"
                 ])
             ],
-            remappings={
-                'image_rect': 'image_raw',
-            }.items()
+            # remappings={
+            #     'image_rect': 'image_raw',
+            # }.items()
         ),
         Node(
             package="botrista",
