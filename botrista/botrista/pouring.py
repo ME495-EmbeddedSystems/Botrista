@@ -42,6 +42,7 @@ class Pouring(Node):
         # Creating Services
         self.pour_client = self.create_service(Empty,
                                                "pour_kettle",
+<<<<<<< HEAD
                                                self.pour_callback,
                                                callback_group=self.cb)
         self.execute = self.create_service(Empty,
@@ -79,6 +80,9 @@ class Pouring(Node):
         self.pour_client = self.create_service(Empty,
                                               "pour_kettle",
                                               self.pour_callback)
+=======
+                                               self.pour_callback)
+>>>>>>> a470504 (Worked on pouring node:)
         self.execute = self.create_service(Empty,
                                            "execute_traj",
                                            self.execute_callback)
@@ -93,9 +97,7 @@ class Pouring(Node):
 >>>>>>> 6daa95b (Worked on pouring node:)
 =======
         waypoints = get_spiral_waypoints(self.home,
-                                         self.homePose,
                                          100,
-                                         0.0,
                                          0.01,
                                          4.0,
                                          flipStart=False)
@@ -120,6 +122,7 @@ def main(args=None):
 
 
 def get_spiral_waypoints(startPoint: Point,
+<<<<<<< HEAD
                          numPoints: int,
                          maxRadius: float,
                          loops: float,
@@ -136,16 +139,22 @@ def get_spiral_waypoints(startPoint: Point,
 
 def get_spiral_waypoints(start: Point,
                          ore: Quaternion,
+=======
+>>>>>>> a470504 (Worked on pouring node:)
                          numPoints: int,
-                         a: float,
-                         b: float,
+                         maxRadius: float,
                          loops: float,
+<<<<<<< HEAD
                          flipStart: bool = False) -> list[Pose]:
 >>>>>>> 6daa95b (Worked on pouring node:)
+=======
+                         endStart: bool = False) -> list[Pose]:
+>>>>>>> a470504 (Worked on pouring node:)
     """
     Create a spiral path given parameters
 
     Arguments:
+<<<<<<< HEAD
 <<<<<<< HEAD
         startPoint (geometry_msgs/Point) -- Starting point
         numPoints (int) -- number of points used to build the path
@@ -156,14 +165,20 @@ def get_spiral_waypoints(start: Point,
         endStart (bool) -- Start at the end of the spiral instead of the center (default: {False})
 =======
         start (geometry_msgs/Point) -- Starting position
+=======
+        startPoint (geometry_msgs/Point) -- Starting point
+>>>>>>> a470504 (Worked on pouring node:)
         numPoints (int) -- number of points used to build the path
-        a (float) -- distance of the starting point from the origin
-        b (float) -- distance between turns of the spiral
+        maxRadius (float) -- distance from end of spiral to origin in cm
         loops -- number of loops for the spiral to go through
 
     Keyword Arguments:
+<<<<<<< HEAD
         flipStart (bool) -- Start at the end of the spiral instead of the center (default: {False})
 >>>>>>> 6daa95b (Worked on pouring node:)
+=======
+        endStart (bool) -- Start at the end of the spiral instead of the center (default: {False})
+>>>>>>> a470504 (Worked on pouring node:)
 
     Returns:
         A list of waypoints
@@ -172,6 +187,7 @@ def get_spiral_waypoints(start: Point,
     count = 0
     thTotal = loops*2*math.pi
     thStep = thTotal/numPoints
+<<<<<<< HEAD
 <<<<<<< HEAD
     b = maxRadius/2/math.pi/loops
 
@@ -196,20 +212,21 @@ def get_spiral_waypoints(start: Point,
     if endStart:
         poseList.reverse()
 =======
+=======
+    b = maxRadius/2/math.pi/loops
+>>>>>>> a470504 (Worked on pouring node:)
 
-    # A list of tuples that contains r and theta
-    polarCoords = []
-    while count < numPoints:
-        polarCoords.append(((count*thStep)*b+a, count*thStep))
-        count += 1
-
+    # Create poses for each point along the spiral
     poseList = []
-    # Convert polar coordinates into cartesian and add in start offset
-    for coord in polarCoords:
-        x = coord[0]*math.cos(coord[1]) + start.x
-        y = coord[0]*math.sin(coord[1]) + start.y
+    while count < numPoints:
+        th = count*thStep
+        r = th*b
+        x = r*math.cos(th) + startPoint.x
+        y = r*math.sin(th) + startPoint.y
+        print("(", x, ",", y, ")")
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
+<<<<<<< HEAD
                                             z=start.z),
                              orientation=ore))
     if flipStart:
@@ -217,6 +234,14 @@ def get_spiral_waypoints(start: Point,
         return poseList.reverse
 >>>>>>> 6daa95b (Worked on pouring node:)
 =======
+=======
+                                            z=startPoint.z),
+                             orientation=Quaternion()))
+
+        count += 1
+
+    if endStart:
+>>>>>>> a470504 (Worked on pouring node:)
         poseList.reverse()
 >>>>>>> 3b543a4 (Worked on pouring node:)
 
