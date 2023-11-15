@@ -27,8 +27,8 @@ class Pouring(Node):
 
         # Creating Services
         self.pour_client = self.create_service(Empty,
-                                              "pour_kettle",
-                                              self.pour_callback)
+                                               "pour_kettle",
+                                               self.pour_callback)
         self.execute = self.create_service(Empty,
                                            "execute_traj",
                                            self.execute_callback)
@@ -40,9 +40,7 @@ class Pouring(Node):
     async def pour_callback(self, request, response):
         # TODO: Fill in
         waypoints = get_spiral_waypoints(self.home,
-                                         self.homePose,
                                          100,
-                                         0.0,
                                          0.01,
                                          4.0,
                                          flipStart=False)
@@ -63,25 +61,22 @@ def main(args=None):
     rclpy.shutdown()
 
 
-def get_spiral_waypoints(start: Point,
-                         ore: Quaternion,
+def get_spiral_waypoints(startPoint: Point,
                          numPoints: int,
-                         a: float,
-                         b: float,
+                         maxRadius: float,
                          loops: float,
-                         flipStart: bool = False) -> list[Pose]:
+                         endStart: bool = False) -> list[Pose]:
     """
     Create a spiral path given parameters
 
     Arguments:
-        start (geometry_msgs/Point) -- Starting position
+        startPoint (geometry_msgs/Point) -- Starting point
         numPoints (int) -- number of points used to build the path
-        a (float) -- distance of the starting point from the origin
-        b (float) -- distance between turns of the spiral
+        maxRadius (float) -- distance from end of spiral to origin in cm
         loops -- number of loops for the spiral to go through
 
     Keyword Arguments:
-        flipStart (bool) -- Start at the end of the spiral instead of the center (default: {False})
+        endStart (bool) -- Start at the end of the spiral instead of the center (default: {False})
 
     Returns:
         A list of waypoints
@@ -90,23 +85,24 @@ def get_spiral_waypoints(start: Point,
     count = 0
     thTotal = loops*2*math.pi
     thStep = thTotal/numPoints
+    b = maxRadius/2/math.pi/loops
 
-    # A list of tuples that contains r and theta
-    polarCoords = []
-    while count < numPoints:
-        polarCoords.append(((count*thStep)*b+a, count*thStep))
-        count += 1
-
+    # Create poses for each point along the spiral
     poseList = []
-    # Convert polar coordinates into cartesian and add in start offset
-    for coord in polarCoords:
-        x = coord[0]*math.cos(coord[1]) + start.x
-        y = coord[0]*math.sin(coord[1]) + start.y
+    while count < numPoints:
+        th = count*thStep
+        r = th*b
+        x = r*math.cos(th) + startPoint.x
+        y = r*math.sin(th) + startPoint.y
+        print("(", x, ",", y, ")")
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
-                                            z=start.z),
-                             orientation=ore))
-    if flipStart:
+                                            z=startPoint.z),
+                             orientation=Quaternion()))
+
+        count += 1
+
+    if endStart:
         poseList.reverse()
 
     return poseList
