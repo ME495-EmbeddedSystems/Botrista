@@ -15,9 +15,13 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>std_msgs</exec_depend>
 <<<<<<< HEAD
+<<<<<<< HEAD
   <exec_depend>rviz2</exec_depend>
 =======
 >>>>>>> 460e438 (Added localizer node that localizes camera to the robot)
+=======
+  <exec_depend>rviz2</exec_depend>
+>>>>>>> b4dd3a5 (Added launch file that starts franka)
 
   <export>
     <build_type>ament_python</build_type>
