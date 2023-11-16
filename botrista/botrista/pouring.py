@@ -4,9 +4,13 @@ import math
 import numpy as np
 import time
 <<<<<<< HEAD
+<<<<<<< HEAD
 from rclpy.callback_groups import ReentrantCallbackGroup
 =======
 >>>>>>> 6daa95b (Worked on pouring node:)
+=======
+from rclpy.callback_groups import ReentrantCallbackGroup
+>>>>>>> fd3aba9 (typo fixes for testing)
 
 # Object Importing
 from moveit_wrapper.moveitapi import MoveItApi
@@ -26,9 +30,12 @@ class Pouring(Node):
         self.path = None
         self.get_logger().warn("Pouring started")
         self.cb = ReentrantCallbackGroup()
+<<<<<<< HEAD
 =======
         self.get_logger().warn("Pouring started")
 >>>>>>> 6daa95b (Worked on pouring node:)
+=======
+>>>>>>> fd3aba9 (typo fixes for testing)
 
         # Moveit Wrapper Object
         self.moveit = MoveItApi(self,
@@ -42,6 +49,7 @@ class Pouring(Node):
         # Creating Services
         self.pour_client = self.create_service(Empty,
                                                "pour_kettle",
+<<<<<<< HEAD
 <<<<<<< HEAD
                                                self.pour_callback,
                                                callback_group=self.cb)
@@ -83,9 +91,14 @@ class Pouring(Node):
 =======
                                                self.pour_callback)
 >>>>>>> a470504 (Worked on pouring node:)
+=======
+                                               self.pour_callback,
+                                               callback_group=self.cb)
+>>>>>>> fd3aba9 (typo fixes for testing)
         self.execute = self.create_service(Empty,
                                            "execute_traj",
-                                           self.execute_callback)
+                                           self.execute_callback,
+                                            callback_group=self.cb)
 
         # TODO: get april tag home position and use that
         self.home = Point(x=0.3069, y=0.0, z=0.487)
@@ -94,14 +107,19 @@ class Pouring(Node):
     async def pour_callback(self, request, response):
         # TODO: Fill in
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 6daa95b (Worked on pouring node:)
 =======
+=======
+        print("started cb")
+>>>>>>> fd3aba9 (typo fixes for testing)
         waypoints = get_spiral_waypoints(self.home,
-                                         100,
+                                         5,
                                          0.01,
                                          4.0,
-                                         flipStart=False)
+                                         endStart=False)
         result = await self.moveit.create_cartesian_path(waypoints)
+        print("finished await")
         self.path = result.trajectory
         return response
 
@@ -199,6 +217,7 @@ def get_spiral_waypoints(start: Point,
         x = r*math.cos(th) + startPoint.x
         y = r*math.sin(th) + startPoint.y
         # print("(", x, ",", y, ")")
+<<<<<<< HEAD
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
                                             z=startPoint.z),
@@ -224,6 +243,8 @@ def get_spiral_waypoints(start: Point,
         x = r*math.cos(th) + startPoint.x
         y = r*math.sin(th) + startPoint.y
         print("(", x, ",", y, ")")
+=======
+>>>>>>> fd3aba9 (typo fixes for testing)
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
 <<<<<<< HEAD
@@ -236,7 +257,10 @@ def get_spiral_waypoints(start: Point,
 =======
 =======
                                             z=startPoint.z),
-                             orientation=Quaternion()))
+                             orientation=Quaternion(x=1.0,
+                                                    y=0.,
+                                                    z=0.,
+                                                    w=0.)))
 
         count += 1
 
