@@ -35,7 +35,7 @@ class Pouring(Node):
         self.execute = self.create_service(Empty,
                                            "execute_traj",
                                            self.execute_callback,
-                                            callback_group=self.cb)
+                                           callback_group=self.cb)
 
         # TODO: get april tag home position and use that
         self.home = Point(x=0.3069, y=0.0, z=0.487)
@@ -43,14 +43,14 @@ class Pouring(Node):
 
     async def pour_callback(self, request, response):
         # TODO: Fill in
-        print("started cb")
+        self.get_logger().warn("started cb")
         waypoints = get_spiral_waypoints(self.home,
-                                         5,
-                                         0.01,
-                                         4.0,
+                                         1000,
+                                         0.1,
+                                         10.0,
                                          endStart=False)
         result = await self.moveit.create_cartesian_path(waypoints)
-        print("finished await")
+        self.get_logger().warn("finished await")
         self.path = result.trajectory
         return response
 
