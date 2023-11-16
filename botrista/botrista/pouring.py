@@ -3,6 +3,7 @@ from rclpy.node import Node
 import math
 import numpy as np
 import time
+from rclpy.callback_groups import ReentrantCallbackGroup
 
 # Object Importing
 from moveit_wrapper.moveitapi import MoveItApi
@@ -17,6 +18,7 @@ class Pouring(Node):
         super().__init__(node_name="pouring")
         self.path = None
         self.get_logger().warn("Pouring started")
+        self.cb = ReentrantCallbackGroup()
 
         # Moveit Wrapper Object
         self.moveit = MoveItApi(self,
@@ -28,10 +30,12 @@ class Pouring(Node):
         # Creating Services
         self.pour_client = self.create_service(Empty,
                                                "pour_kettle",
-                                               self.pour_callback)
+                                               self.pour_callback,
+                                               callback_group=self.cb)
         self.execute = self.create_service(Empty,
                                            "execute_traj",
-                                           self.execute_callback)
+                                           self.execute_callback,
+                                            callback_group=self.cb)
 
         # TODO: get april tag home position and use that
         self.home = Point(x=0.3069, y=0.0, z=0.487)
@@ -39,12 +43,14 @@ class Pouring(Node):
 
     async def pour_callback(self, request, response):
         # TODO: Fill in
+        print("started cb")
         waypoints = get_spiral_waypoints(self.home,
-                                         100,
+                                         5,
                                          0.01,
                                          4.0,
-                                         flipStart=False)
+                                         endStart=False)
         result = await self.moveit.create_cartesian_path(waypoints)
+        print("finished await")
         self.path = result.trajectory
         return response
 
@@ -94,11 +100,14 @@ def get_spiral_waypoints(startPoint: Point,
         r = th*b
         x = r*math.cos(th) + startPoint.x
         y = r*math.sin(th) + startPoint.y
-        print("(", x, ",", y, ")")
+        # print("(", x, ",", y, ")")
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
                                             z=startPoint.z),
-                             orientation=Quaternion()))
+                             orientation=Quaternion(x=1.0,
+                                                    y=0.,
+                                                    z=0.,
+                                                    w=0.)))
 
         count += 1
 
