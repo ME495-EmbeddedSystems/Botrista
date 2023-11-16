@@ -62,7 +62,7 @@ from tf2_ros import TransformListener, Buffer, TransformBroadcaster
 from geometry_msgs.msg import TransformStamped, Transform, Vector3
 >>>>>>> 460e438 (Added localizer node that localizes camera to the robot)
 
-
+ 
 class CameraLocalizer(Node):
     """
     Localizes the ceiling mounted d435i camera to the robot
