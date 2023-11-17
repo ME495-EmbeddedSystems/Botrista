@@ -65,5 +65,9 @@ def generate_launch_description():
         Node(
             package="botrista",
             executable="camera_localizer",
+        ),
+        Node(
+            package="botrista",
+            executable="bounding_box"
         )
     ])
