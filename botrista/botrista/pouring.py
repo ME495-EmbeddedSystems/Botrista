@@ -30,7 +30,7 @@ class Pouring(Node):
                                ParameterDescriptor(
                                    description="Z distance to move to before pouring"))
         self.offset = self.get_parameter("pour_begin_offset")\
-                             .get_parameter_value().double_value
+            .get_parameter_value().double_value
 
         # Creating tf listener
         self.tf_buffer = Buffer()
@@ -76,7 +76,7 @@ class Pouring(Node):
         feedback.stage = "Calculating path"
         goal_handle.publish_feedback(feedback)
         waypoints = get_spiral_waypoints(startPoint,
-                                         startOre,
+                                         req.tilt_ang,
                                          req.num_points,
                                          req.spiral_radius,
                                          req.num_loops,
@@ -84,7 +84,7 @@ class Pouring(Node):
         standoff_point = startPoint
         standoff_point.z += self.offset
         standoffPose = Pose(position=standoff_point,
-                             orientation=startOre)
+                            orientation=startOre)
         waypoints.append(standoffPose)
         waypoints.insert(0, standoffPose)
 
@@ -145,7 +145,6 @@ def get_spiral_waypoints(startPoint: Point,
         r = th*b
         x = r*math.cos(th) + startPoint.x
         y = r*math.sin(th) + startPoint.y
-        # print("(", x, ",", y, ")")
         poseList.append(Pose(position=Point(x=x,
                                             y=y,
                                             z=startPoint.z),
