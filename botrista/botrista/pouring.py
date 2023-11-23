@@ -10,12 +10,11 @@ from tf2_ros.buffer import Buffer
 
 # Object Importing
 from moveit_wrapper.moveitapi import MoveItApi
-from geometry_msgs.msg import Point, Quaternion, Pose, Vector3
+from geometry_msgs.msg import Vector3, Point, Quaternion, Pose, TransformStamped
 from rcl_interfaces.msg import ParameterDescriptor
-from moveit_msgs.msg import RobotState
-from std_srvs.srv import Empty
 from rclpy.action import ActionServer
 from botrista_interfaces.action import PourAction
+from std_srvs.srv import Empty
 
 
 class Pouring(Node):
@@ -42,7 +41,8 @@ class Pouring(Node):
                                 "panda_link0",
                                 "panda_hand_tcp",
                                 "panda_manipulator",
-                                "joint_states")
+                                "joint_states",
+                                "panda")
 
         # Creating action server
         self._action_server = ActionServer(self,
@@ -50,6 +50,11 @@ class Pouring(Node):
                                            'pour_action',
                                            self.pour_callback,
                                            callback_group=self.cb)
+        
+        self.test = self.create_service(Empty,
+                                        "test_attach",
+                                        self.test,
+                                        callback_group=self.cb)
 
     async def pour_callback(self, goal_handle):
         # TODO: Fill in
@@ -101,6 +106,26 @@ class Pouring(Node):
         goal_handle.succeed()
         result.status = True
         return result
+
+    async def test(self, request, response):
+        arr = []
+        link = TransformStamped()
+        link.header.frame_id = "handle"
+        link.header.stamp = self.get_clock().now().to_msg()
+        link.child_frame_id = "panda_link0"
+        arr.append(link)
+
+        link1 = TransformStamped()
+        link1.header.frame_id = "handle2"
+        link1.header.stamp = self.get_clock().now().to_msg()
+        link1.child_frame_id = "panda_link0"
+        link1.transform.translation=Vector3(x=1.0)
+        link1.transform.rotation=Quaternion(x=1.0)
+        arr.append(link1)
+        result = await self.moveit.attachObject(arr)
+        print(result)
+    
+        return response
 
 
 def main(args=None):
