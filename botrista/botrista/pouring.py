@@ -76,11 +76,11 @@ class Pouring(Node):
         feedback.stage = "Calculating path"
         goal_handle.publish_feedback(feedback)
         waypoints = get_spiral_waypoints(startPoint,
-                                         req.tilt_ang,
-                                         req.num_points,
-                                         req.spiral_radius,
-                                         req.num_loops,
-                                         req.start_outside)
+                                               req.tilt_ang,
+                                               req.num_points,
+                                               req.spiral_radius,
+                                               req.num_loops,
+                                               req.start_outside)
         standoff_point = startPoint
         standoff_point.z += self.offset
         standoffPose = Pose(position=standoff_point,
@@ -92,7 +92,7 @@ class Pouring(Node):
         feedback.stage = "Planning path"
         goal_handle.publish_feedback(feedback)
         planned_traj = await self.moveit.create_cartesian_path(waypoints)
-
+        
         # Executing path
         feedback.stage = "Executing path"
         goal_handle.publish_feedback(feedback)
@@ -115,7 +115,7 @@ def get_spiral_waypoints(startPoint: Point,
                          numPoints: int,
                          maxRadius: float,
                          loops: float,
-                         flipStart: bool = False) -> list[Pose]:
+                         flipStart: bool = False) -> (list[Pose], float):
     """
     Create a spiral path given parameters
 
@@ -141,6 +141,7 @@ def get_spiral_waypoints(startPoint: Point,
     # Create poses for each point along the spiral
     poseList = []
     while count < numPoints:
+        # Calculating new point
         th = count*thStep
         r = th*b
         x = r*math.cos(th) + startPoint.x
