@@ -11,6 +11,7 @@ from tf2_ros.buffer import Buffer
 # Object Importing
 from moveit_wrapper.moveitapi import MoveItApi
 from geometry_msgs.msg import Vector3, Point, Quaternion, Pose, TransformStamped
+from shape_msgs.msg import SolidPrimitive
 from rcl_interfaces.msg import ParameterDescriptor
 from rclpy.action import ActionServer
 from botrista_interfaces.action import PourAction
@@ -108,23 +109,32 @@ class Pouring(Node):
         return result
 
     async def test(self, request, response):
-        arr = []
-        link = TransformStamped()
-        link.header.frame_id = "handle"
-        link.header.stamp = self.get_clock().now().to_msg()
-        link.child_frame_id = "panda_link0"
-        arr.append(link)
+        # arr = []
+        # link = TransformStamped()
+        # link.header.frame_id = "handle"
+        # link.header.stamp = self.get_clock().now().to_msg()
+        # link.child_frame_id = "panda_link0"
+        # arr.append(link)
 
-        link1 = TransformStamped()
-        link1.header.frame_id = "handle2"
-        link1.header.stamp = self.get_clock().now().to_msg()
-        link1.child_frame_id = "panda_link0"
-        link1.transform.translation=Vector3(x=1.0)
-        link1.transform.rotation=Quaternion(x=1.0)
-        arr.append(link1)
-        result = await self.moveit.attachObject(arr)
-        print(result)
+        # link1 = TransformStamped()
+        # link1.header.frame_id = "handle2"
+        # link1.header.stamp = self.get_clock().now().to_msg()
+        # link1.child_frame_id = "panda_link0"
+        # link1.transform.translation=Vector3(x=1.0)
+        # link1.transform.rotation=Quaternion(x=1.0)
+        # arr.append(link1)
+        # result = await self.moveit.attachObject(arr)
+        # print(result)
     
+
+        pose = Pose(position=Point(x=0.0, y=0.0, z=0.1),
+                    orientation=Quaternion(x=1.0))
+        primitive = SolidPrimitive(
+            type=SolidPrimitive.BOX,
+            dimensions=[0.02, 0.02, 0.02]
+        )
+        self.moveit.createAttachObject("box", [pose], [primitive])
+        self.moveit.attachObjectToEE("box")
         return response
 
 
