@@ -29,7 +29,7 @@ class Pouring(Node):
         self.declare_parameter("pour_begin_offset", 0.05,
                                ParameterDescriptor(
                                    description="Z distance to move to before pouring"))
-        self.offset = self.get_parameter("pour_begin_offset")\
+        self.pour_height_offset = self.get_parameter("pour_begin_offset")\
             .get_parameter_value().double_value
 
         # Creating tf listener
@@ -57,6 +57,28 @@ class Pouring(Node):
                                         self.test,
                                         callback_group=self.cb)
 
+        # TODO:
+
+        from rclpy.qos import QoSProfile, QoSDurabilityPolicy
+        from tf2_ros.static_transform_broadcaster import StaticTransformBroadcaster
+        QoS_prof = QoSProfile(
+            depth=10, durability=QoSDurabilityPolicy.TRANSIENT_LOCAL)
+
+        # Broadcast the static frames
+        self.static_broadcaster = StaticTransformBroadcaster(self, QoS_prof)
+        world_odom_tf = TransformStamped()
+        world_odom_tf.header.stamp = self.get_clock().now().to_msg()
+        world_odom_tf.header.frame_id = "panda_link0"
+        world_odom_tf.child_frame_id = "test"
+
+        # Translate odom to (5.5, 5.5) to correspond to the turtle spawn point
+        world_odom_tf.transform.translation = Vector3(x=0.35, y=0.15, z=0.35)
+        world_odom_tf.transform.rotation = Quaternion(x=1.0,
+                                                      y=7.075205212458968e-05,
+                                                      z=8.176789378921967e-07,
+                                                      w=-2.2807897039456293e-05)
+        self.static_broadcaster.sendTransform(world_odom_tf)
+
     async def pour_callback(self, goal_handle):
         # TODO: Fill in
         result = PourAction.Result()
@@ -73,13 +95,16 @@ class Pouring(Node):
                 req.pour_frame,
                 rclpy.time.Time())
             startVec = tf.transform.translation
-            startPoint = Point(x=startVec.x + offset, y=startVec.y, z=startVec.z)
-            startOre = tf.transform.rotation
+            startPoint = Point(x=startVec.x, y=startVec.y -
+                               offset, z=startVec.z)
         except TransformException:
             feedback.stage = f"Failed to get transform to {req.pour_frame}"
             goal_handle.publish_feedback(feedback)
             result.status = False
             return result
+
+        currPose = await self.moveit.get_end_effector_pose()
+        startOre = currPose.pose.orientation
 
         # Calculating path
         feedback.stage = "Calculating path"
@@ -90,8 +115,10 @@ class Pouring(Node):
                                          req.num_points,
                                          req.spiral_radius,
                                          req.num_loops,
+                                         offset,
                                          req.start_outside)
         standoff_point = startPoint
+        standoff_point.z += self.pour_height_offset
         standoffPose = Pose(position=standoff_point,
                             orientation=startOre)
         waypoints.append(standoffPose)
@@ -112,23 +139,6 @@ class Pouring(Node):
         return result
 
     async def test(self, request, response):
-        # arr = []
-        # link = TransformStamped()
-        # link.header.frame_id = "handle"
-        # link.header.stamp = self.get_clock().now().to_msg()
-        # link.child_frame_id = "panda_link0"
-        # arr.append(link)
-
-        # link1 = TransformStamped()
-        # link1.header.frame_id = "handle2"
-        # link1.header.stamp = self.get_clock().now().to_msg()
-        # link1.child_frame_id = "panda_link0"
-        # link1.transform.translation=Vector3(x=1.0)
-        # link1.transform.rotation=Quaternion(x=1.0)
-        # arr.append(link1)
-        # result = await self.moveit.attachObject(arr)
-        # print(result)
-
         pose = Pose(position=Point(x=0.0, y=0.0, z=0.1),
                     orientation=Quaternion(x=1.0))
         primitive = SolidPrimitive(
@@ -153,6 +163,7 @@ def get_spiral_waypoints(startPoint: Point,
                          numPoints: int,
                          maxRadius: float,
                          loops: float,
+                         offset: float,
                          flipStart: bool = False) -> (list[Pose], float):
     """
     Create a spiral path given parameters
@@ -177,7 +188,6 @@ def get_spiral_waypoints(startPoint: Point,
     thStep = thTotal/numPoints
     b = maxRadius/2/math.pi/loops
     tilt_ang = angle_between_quaternions(startOre, tiltOre)
-    
 
     # Create poses for each point along the spiral
     poseList = []
@@ -185,15 +195,14 @@ def get_spiral_waypoints(startPoint: Point,
         # Calculating new point
         th = count*thStep
         r = th*b
-        x = r*math.cos(th) + startPoint.x
-        y = r*math.sin(th) + startPoint.y
-        z = startPoint.z
+        x = r*math.cos(th)
+        y = r*math.sin(th)
+        z = 0
 
         # Transform by offset
-        x_n = x*math.cos(tilt_ang)
-        y_n = y
-        z_n = z + x*math.sin(tilt_ang)
-        
+        x_n = x + startPoint.x
+        y_n = y + startPoint.y
+        z_n = z + startPoint.z + offset*math.sin(tilt_ang)
 
         poseList.append(Pose(position=Point(x=x_n,
                                             y=y_n,
@@ -216,7 +225,7 @@ def angle_between_quaternions(q0, q1):
     z0 = q0.z
 
     # Extract the values from q1
-    w1 = -q1.w # negative to get inverse
+    w1 = -q1.w  # negative to get inverse
     x1 = q1.x
     y1 = q1.y
     z1 = q1.z
@@ -228,23 +237,23 @@ def angle_between_quaternions(q0, q1):
     q0q1_z = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1
 
     r, p, y = euler_from_quaternion(q0q1_x, q0q1_y, q0q1_z, q0q1_w)
-    
-    # we only care about pitch because we rotate about the y-axis
-    return p
 
- 
+    # we only care about pitch because we rotate about the x-axis
+    return abs(r)
+
+
 def euler_from_quaternion(x, y, z, w):
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        roll_x = math.atan2(t0, t1)
-     
-        t2 = +2.0 * (w * y - z * x)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        pitch_y = math.asin(t2)
-     
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw_z = math.atan2(t3, t4)
-     
-        return roll_x, pitch_y, yaw_z 
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll_x = math.atan2(t0, t1)
+
+    t2 = +2.0 * (w * y - z * x)
+    t2 = +1.0 if t2 > +1.0 else t2
+    t2 = -1.0 if t2 < -1.0 else t2
+    pitch_y = math.asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw_z = math.atan2(t3, t4)
+
+    return roll_x, pitch_y, yaw_z
