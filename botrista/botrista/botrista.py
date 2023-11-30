@@ -12,7 +12,6 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 # Import types
 from geometry_msgs.msg import Point, PoseStamped, Quaternion, Vector3, Pose
-from botrista_interfaces.action import PourAction
 from std_srvs.srv import Empty
 
 
@@ -26,18 +25,12 @@ class Botrista(Node):
         super().__init__("botrista")
         self.cb_group = ReentrantCallbackGroup()
 
-        # Action Clients
-        self.pour_action_client = ActionClient(self, PourAction, 'pour_action', callback_group=self.cb_group)
-
         # Service Clients
         self.kettle_grab = self.create_client(Empty, "grab", callback_group=self.cb_group)
         self.kettle_release = self.create_client(Empty, "place", callback_group=self.cb_group)
 
 
         # Timeouts
-        if not self.pour_action_client.wait_for_server(timeout_sec=1.0):
-            raise RuntimeError(
-                'Timeout waiting for "Pour" action to become available')
         if not self.kettle_grab.wait_for_service(timeout_sec=1.0):
             raise RuntimeError(
                 'Timeout waiting for "grab" service to become available')

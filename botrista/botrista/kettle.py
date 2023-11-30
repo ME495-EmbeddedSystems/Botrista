@@ -1,25 +1,24 @@
 import rclpy
 from rclpy.node import Node
 import tf2_geometry_msgs
-from tf2_ros import Buffer, TransformListener, TransformBroadcaster, StaticTransformBroadcaster
+from tf2_ros import Buffer, TransformListener
 from moveit_wrapper.moveitapi import MoveItApi
 from moveit_wrapper.grasp_planner import GraspPlan, GraspPlanner
 from geometry_msgs.msg import Pose, Point, Quaternion
-from control_msgs.msg import GripperCommand
 from std_srvs.srv import Empty
 from rclpy.callback_groups import ReentrantCallbackGroup
 from franka_msgs.action import Grasp
 from rclpy.time import Time
-from rclpy.callback_groups import ReentrantCallbackGroup
-from rclpy.time import Time
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.action import ActionClient
+from botrista_interfaces.action import PourAction
 
 
 class Kettle(Node):
 
     def __init__(self):
         super().__init__("kettle")
-        pass
+        self.cb_group = ReentrantCallbackGroup
+        self.kettle_hand_to_spout = 0.05 #TODO: input correct distance
 
         self.buffer = Buffer()
         self.listener = TransformListener(self.buffer, self)
@@ -29,10 +28,10 @@ class Kettle(Node):
             self.moveit_api, "panda_gripper/grasp")
 
         self.grab_srv = self.create_service(
-            Empty, "grab", self.grab, callback_group=ReentrantCallbackGroup())
+            Empty, "grab", self.grab, callback_group=self.cb_group)
 
         self.release_srv = self.create_service(
-            Empty, "place", self.place, callback_group=ReentrantCallbackGroup())
+            Empty, "place", self.place, callback_group=self.cb_group)
 
         # measured poses
         self.approach_pose = Pose(
@@ -47,6 +46,24 @@ class Kettle(Node):
             position=Point(x=0.097, y=0.043, z=0.25),
             orientation=Quaternion(x=0.88, y=-0.035, z=0.47, w=0.01)
         )
+
+        # Pouring
+        self.pour_action_client = ActionClient(
+            self, PourAction, 'pour_action', callback_group=self.cb_group)
+        if not self.pour_action_client.wait_for_server(timeout_sec=1.0):
+            raise RuntimeError(
+                'Timeout waiting for "Pour" action to become available')
+
+        # Pour action variables
+        pour_req = PourAction.Goal(spiral_radius=0.05,
+                                   num_loops=100,
+                                   num_points=100,
+                                   pour_frame="test",
+                                   tilt_ang=Quaternion(x=0.611741304397583,
+                                                       y=0.6160799264907837,
+                                                       z=0.3496427536010742,
+                                                       w=-0.3520910441875458),
+                                   y_offset=self.kettle_hand_to_spout)
 
     async def grab(self, request, response):
         """
