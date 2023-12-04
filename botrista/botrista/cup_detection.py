@@ -76,7 +76,7 @@ class CupDetection(Node):
             Image, "image_rect_color", self.img_callback, 10
         )
         self.start_sub = self.create_subscription(
-            Empty, "start_coffee", self.start_callback, 10
+            Empty, "restart_coffee", self.start_callback, 10
         )
         self.cam_info_sub = self.create_subscription(
             CameraInfo, "camera_info", self.cam_info_callback, 10
@@ -86,6 +86,9 @@ class CupDetection(Node):
         self.depth_publisher = self.create_publisher(
             Image, "/cup_image", qos_profile=10
         )
+        self.coffee_publisher = self.create_publisher(
+            Empty, "coffee_start", qos_profile=10
+        )
 
         # Service Client intializing
         self.delay_client = self.create_client(
@@ -93,7 +96,7 @@ class CupDetection(Node):
         )
         while not self.delay_client.wait_for_service(timeout_sec=5.0):
             self.get_logger().warn("Waiting for delay service")
-        
+
         # Timer intializing
         self.timer = self.create_timer(0.1, self.timer_callback)
 
@@ -109,10 +112,11 @@ class CupDetection(Node):
                 x=(-self.cup_x/2)+0.015,
                 y=(-self.cup_y)+0.045,
                 z=0.115)
-            self.get_logger().info(str(self.cup_tf.transform.translation))
+            # self.get_logger().info(str(self.cup_tf.transform.translation))
             self.depth_publisher.publish(
-                        self.cv_bridge.cv2_to_imgmsg(self.cv_im))
+                self.cv_bridge.cv2_to_imgmsg(self.cv_im))
             self.transform_broadcaster.sendTransform(self.cup_tf)
+            self.coffee_publisher.publish(Empty())
 
     def start_callback(self, msg: Empty):
         self.state = State.START
@@ -164,20 +168,21 @@ class CupDetection(Node):
                 self.cv_im = cv_im.copy()
                 if circles is not None:
                     circles = np.uint16(np.around(circles))
-                    circles2=sorted(circles[0],key=lambda x:x[2],reverse=True)
+                    circles2 = sorted(
+                        circles[0], key=lambda x: x[2], reverse=True)
                     self.get_logger().info("Cup!")
                     i = circles2[0]
                     (self.cup_x, self.cup_y, self.cup_z) = self.cam.projectPixelTo3dRay(
                         (i[0]+(pixel_tf[0]-100),
-                        i[1]+(pixel_tf[1]-350)))
+                         i[1]+(pixel_tf[1]-350)))
                     cv2.circle(self.cv_im, (i[0]+(pixel_tf[0]-100),
-                        i[1]+(pixel_tf[1]-350)), 7, (0,0,255), -1)
-                    cv2.circle(self.cv_im,(i[0]+(pixel_tf[0]-100),
-                        i[1]+(pixel_tf[1]-350)),i[2],(0,255,0),2)
+                                            i[1]+(pixel_tf[1]-350)), 7, (0, 0, 255), -1)
+                    cv2.circle(self.cv_im, (i[0]+(pixel_tf[0]-100),
+                                            i[1]+(pixel_tf[1]-350)), i[2], (0, 255, 0), 2)
                     self.depth_publisher.publish(
-                    self.cv_bridge.cv2_to_imgmsg(self.cv_im))
+                        self.cv_bridge.cv2_to_imgmsg(self.cv_im))
                     self.state = State.CUP
-                    
+
                 if circles is None:
                     self.get_logger().info("No Cup :(")
         except Exception as e:
