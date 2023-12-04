@@ -228,7 +228,7 @@ class Pick_filter(Node):
         )
 
         grasp_pose = Pose(
-            position=Point(x=0.09, y=0.02, z=0.04),
+            position=Point(x=0.09, y=0.02, z=0.03),
             orientation=Quaternion(
                 x=0.0, y=1.0, z=0.0, w=0.0
             )
